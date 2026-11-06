@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mehanoid Space — Systems Engineering & Distributed Infrastructure</title>
+  <meta name="description" content="Personal lab & portfolio of a systems engineer focusing on high-performance networking, Linux internals, resilient protocols, and distributed architecture.">
+  <meta name="author" content="Konstantin (Mehanoid)">
+  <meta property="og:title" content="Mehanoid Space — Systems Engineering">
+  <meta property="og:description" content="Research and notes on resilient transport protocols, Linux internals, and high-performance infrastructure.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mehanoid.space">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="#focus">Focus</a>
+        <a href="#projects">Projects</a>
+        <a href="#writing">Notes</a>
+        <a href="#about">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section class="hero">
+        <div class="badge">
+          <span class="pulse"></span>
+          <span>SYSTEMS ACTIVE &bull; RESEARCH LAB</span>
+        </div>
+        <h1 class="hero-title">Systems engineering, resilient protocols, and distributed networks.</h1>
+        <p class="hero-subtitle">
+          Hi, I am Konstantin. I build low-latency networking tools, Linux kernel integrations, and resilient transport layers that keep communications open and reliable across hostile network topologies.
+        </p>
+        <div class="hero-cta">
+          <a href="#projects" class="btn btn-primary">
+            <span>Explore Projects</span>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+          <a href="#writing" class="btn btn-secondary">
+            <span>Technical Notes</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- Terminal Status Snippet -->
+      <div class="terminal-box">
+        <div class="terminal-header">
+          <span class="terminal-dot dot-red"></span>
+          <span class="terminal-dot dot-yellow"></span>
+          <span class="terminal-dot dot-green"></span>
+        </div>
+        <pre><span class="cmd">konstantin@mehanoid-space:~$</span> sysctl net.core.default_qdisc net.ipv4.tcp_congestion_control
+<span class="res">net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr</span>
+<span class="cmd">konstantin@mehanoid-space:~$</span> curl -sI https://mehanoid.space | grep -iE 'HTTP/|server|alt-svc'
+<span class="res">HTTP/2 200 OK
+server: nginx
+alt-svc: h3=":443"; ma=86400</span></pre>
+      </div>
+
+      <!-- Core Areas -->
+      <section id="focus">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+            <span>Core Engineering Focus</span>
+          </h2>
+        </div>
+        <div class="grid-cards">
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <h3>Transport &amp; Anti-Censorship</h3>
+            <p>Resilient framing, HTTP/2 SplitHTTP multiplexing, QUIC connection migration, and active probing countermeasures.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <h3>Linux Systems &amp; eBPF</h3>
+            <p>Kernel tuning, netfilter optimization, socket buffers, non-blocking zero-copy I/O, and XDP packet filtering.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+            </div>
+            <h3>Edge CDN Orchestration</h3>
+            <p>GeoDNS distribution, origin-shield failover topologies, reverse proxy caches, and TLS SNI trust routing.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Projects -->
+      <section id="projects">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span>Selected Projects</span>
+          </h2>
+          <a href="https://github.com/Konstantin-si" target="_blank" rel="noopener" class="btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: var(--radius-sm);">GitHub &rarr;</a>
+        </div>
+
+        <div class="project-card">
+          <div class="project-top">
+            <a href="https://github.com/Konstantin-si" class="project-title" target="_blank" rel="noopener">
+              <span>velarion-core</span>
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+            <span class="tag" style="color: var(--accent-cyan); border-color: rgba(56, 189, 248, 0.3);">Active</span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.92rem;">High-performance dual-core tunnel runtime written in Go with autonomous health detection, canary fallbacks, and zero-drop reconnection.</p>
+          <div class="tags">
+            <span class="tag">Go</span>
+            <span class="tag">QUIC</span>
+            <span class="tag">XHTTP</span>
+            <span class="tag">WireGuard</span>
+            <span class="tag">Linux</span>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-top">
+            <a href="https://github.com/Konstantin-si" class="project-title" target="_blank" rel="noopener">
+              <span>mesh-sentinel</span>
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+            <span class="tag">v1.2</span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.92rem;">Lightweight telemetry probe and freeze detector that distinguishes packet drops from stateful DPI freeze without triggering RST alarms.</p>
+          <div class="tags">
+            <span class="tag">Rust / C</span>
+            <span class="tag">eBPF</span>
+            <span class="tag">Prometheus</span>
+            <span class="tag">TCP State</span>
+          </div>
+        </div>
+
+        <div class="project-card">
+          <div class="project-top">
+            <a href="https://github.com/Konstantin-si" class="project-title" target="_blank" rel="noopener">
+              <span>infra-harden</span>
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+            <span class="tag">Ansible</span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.92rem;">Automated security hardening playbooks for cloud VPS instances: nftables, sysctl BBR/FQ, AppArmor profiles, and automated kernel patching.</p>
+          <div class="tags">
+            <span class="tag">Ansible</span>
+            <span class="tag">Debian</span>
+            <span class="tag">nftables</span>
+            <span class="tag">Systemd</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Technical Articles -->
+      <section id="writing">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span>Notes &amp; Field Analysis</span>
+          </h2>
+        </div>
+
+        <div class="articles-list">
+          <a href="/articles/packet-resilience-in-unreliable-networks.html" class="article-row">
+            <div>
+              <div class="article-title">Resilient Transport Architecture Against Active DPI Probing</div>
+              <div class="article-desc">Analysis of handshake fingerprints, random padding heuristics, and why fallback camouflage matters.</div>
+            </div>
+            <div class="article-date">Nov 2026</div>
+          </a>
+
+          <div class="article-row" style="cursor: default;">
+            <div>
+              <div class="article-title">BBR v3 vs Cubic in High-Latency Edge Relays</div>
+              <div class="article-desc">Benchmarking congestion control algorithms over transatlantic links with 1.5% simulated packet loss.</div>
+            </div>
+            <div class="article-date">Oct 2026</div>
+          </div>
+
+          <div class="article-row" style="cursor: default;">
+            <div>
+              <div class="article-title">Zero-Copy Network Buffers: Exploring AF_XDP in Modern Linux</div>
+              <div class="article-desc">Bypassing standard network stack overhead for million-packet-per-second edge nodes.</div>
+            </div>
+            <div class="article-date">Sep 2026</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About / Contact -->
+      <section id="about">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>About / Contact</span>
+          </h2>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.5rem;">
+          I focus on building resilient backend and network infrastructure. When I am not optimizing kernel buffers or deploying distributed edge nodes, I explore computer architecture, distributed consensus algorithms, and privacy engineering.
+        </p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <a href="https://github.com/Konstantin-si" target="_blank" rel="noopener" class="btn btn-secondary">
+            <span>GitHub (@Konstantin-si)</span>
+          </a>
+          <a href="mailto:contact@mehanoid.space" class="btn btn-secondary">
+            <span>contact@mehanoid.space</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid.space &bull; Systems &amp; Infrastructure Lab</div>
+      <div class="footer-links">
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+        <a href="https://github.com/Konstantin-si/mehanoid-space" target="_blank" rel="noopener">Source Code</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>
