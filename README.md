@@ -1,27 +1,42 @@
 # Mehanoid Space (mehanoid.space)
 
-> Systems Engineering, Distributed Infrastructure & Protocol Research Lab.
+> Systems Engineering, Linux Internals, Storage & Web Infrastructure Journal.
 
-Official personal portfolio, technical notes, and front-facing web facade for [`mehanoid.space`](https://mehanoid.space).
+Official repository for the static publication website [`mehanoid.space`](https://mehanoid.space).
+
+## Overview
+
+Mehanoid Space is an independent engineering journal covering:
+- **Linux Systems & Kernels:** Unified cgroups v2 resource controllers, systemd process isolation, and kernel performance metrics.
+- **Storage & Disaster Recovery:** Content-defined deduplication, deterministic backup pipelines, and automated restore verification drills.
+- **Web Protocols & Delivery:** HTTP/2 stream multiplexing, TLS 1.3 session optimization, Brotli compression, and deterministic caching headers.
+- **Operational Server Reliability:** Zero-downtime Nginx reloads, disk space defense via logrotate, and ACME certificate renewal automation.
 
 ## Architecture & Features
 
-- **Ultra-lightweight & zero-dependency:** Pure semantic HTML5, modern CSS with responsive tokens, and vanilla ES6 JavaScript.
+- **Ultra-lightweight & zero external dependencies:** Pure semantic HTML5, modern CSS with responsive design tokens, and vanilla ES6 JavaScript.
 - **Theme support:** Dark & Light mode toggle with automatic OS preference detection (`prefers-color-scheme`).
-- **SEO & Search Standards:** Includes `robots.txt`, `sitemap.xml`, OpenGraph metadata, and structured article previews.
-- **DPI / Active Probing Camouflage:** Designed to act as an authentic, high-reputation web facade on port 443 while isolating encrypted transport streams to dedicated subpaths.
+- **SEO & Standards Compliant:** Semantic metadata, `robots.txt`, and standard canonical XML `sitemap.xml`.
+- **Accessible & Responsive:** Fluid typography, accessible touch targets (≥ 44×44px), and cross-device compatibility from mobile to desktop.
 
 ## Project Structure
 
 ```text
 mehanoid-space/
-├── index.html                  # Main portfolio & technical focus page
-├── articles/                   # Technical field notes and research articles
+├── index.html                  # Journal homepage & article index
+├── about.html                  # Editorial mission and scope
+├── 404.html                    # Resource not found error page
+├── articles/                   # In-depth technical articles
+│   ├── linux-process-isolation-and-cgroups.html
+│   ├── backup-verification-and-disaster-recovery.html
+│   ├── web-performance-and-http-optimization.html
+│   ├── practical-web-server-maintenance.html
 │   └── packet-resilience-in-unreliable-networks.html
 ├── assets/
 │   ├── favicon.svg             # Vector tech logo
-│   ├── style.css               # Fluid typography and responsive layout
+│   ├── style.css               # Fluid typography and theme design tokens
 │   └── main.js                 # Theme switching & client interactions
+├── dist/                       # Clean public distribution artifact
 ├── nginx.conf                  # Production reverse-proxy & static hosting config
 ├── robots.txt                  # Search engine crawl rules
 └── sitemap.xml                 # Canonical XML sitemap
@@ -29,39 +44,18 @@ mehanoid-space/
 
 ## Local Development & Preview
 
-Run any lightweight HTTP server in the repository directory:
+Run any lightweight HTTP server in the repository or `dist/` directory:
 
 ```bash
 # Python 3
 python3 -m http.server 8080
 
 # Or with Node.js
-npx serve .
+npx serve dist
 ```
 
 Then navigate to `http://localhost:8080`.
 
-## Deployment
-
-### Option 1: Direct Nginx Hosting
-Copy files to `/var/www/mehanoid-space` on the server and use the provided `nginx.conf`:
-
-```bash
-sudo mkdir -p /var/www/mehanoid-space
-sudo cp -r * /var/www/mehanoid-space/
-sudo cp nginx.conf /etc/nginx/sites-available/mehanoid.space
-sudo ln -s /etc/nginx/sites-available/mehanoid.space /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-### Option 2: Docker / Container
-```bash
-docker run -d --name mehanoid-web \
-  -p 8080:80 \
-  -v $(pwd):/usr/share/nginx/html:ro \
-  nginx:alpine
-```
-
 ## License
 
-MIT &copy; 2026 Konstantin (Mehanoid)
+MIT &copy; 2026 Mehanoid Space

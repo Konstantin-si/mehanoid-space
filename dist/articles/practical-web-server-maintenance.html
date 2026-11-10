@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Web Server Maintenance: Zero-Downtime Reloads, Log Rotation, and Security Baselines — Mehanoid Space</title>
+  <meta name="description" content="Operational runbook for routine production web server maintenance: graceful zero-downtime Nginx reloads, disk space protection via logrotate, automated ACME renewals, and security baselines.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#articles">Articles</a>
+        <a href="/about.html">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <a href="/#articles" class="back-link">&larr; Back to all articles</a>
+
+      <div class="article-header">
+        <div class="article-topic">Server Operations</div>
+        <h1 class="hero-title" style="font-size: 2.2rem; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          Production Web Server Maintenance: Zero-Downtime Reloads, Log Rotation, and Security Baselines
+        </h1>
+
+        <div class="article-meta">
+          <span>Published: November 2026</span>
+          <span>Category: Operations &amp; Reliability</span>
+          <span>Reading Time: 10 min</span>
+        </div>
+      </div>
+
+      <article class="article-body">
+        <p>
+          High availability is rarely lost during catastrophic hardware failures; more often, it is compromised during mundane, routine administrative tasks. An untested configuration reload, an unrotated log file consuming 100% of the root filesystem, or an expired TLS certificate can instantly take a web server offline.
+        </p>
+        <p>
+          This guide provides a pragmatic operational checklist and automated runbook for maintaining a standalone production web server safely and reliably.
+        </p>
+
+        <h2>1. Zero-Downtime Configuration Reloads and Binary Upgrades</h2>
+        <p>
+          Never run <code>systemctl restart nginx</code> in production unless the service is completely halted. Restarting tears down master sockets and immediately drops active TCP sessions.
+        </p>
+        <p>
+          Instead, use a safe two-step verification workflow:
+        </p>
+
+        <pre><code># 1. Syntactically validate all includes and SSL certificates
+nginx -t
+
+# 2. Instruct master to reread configuration without dropping connections
+systemctl reload nginx  # Sends SIGHUP to Nginx master process</code></pre>
+
+        <p>
+          During a reload, the master process verifies the configuration file. If valid, it spawns new worker processes with the updated configuration and sends <code>SIGQUIT</code> to old worker processes, allowing them to finish processing active client connections before terminating gracefully.
+        </p>
+
+        <div class="callout-box warning">
+          <h4>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            In-Place Binary Upgrades (Zero-Downtime)
+          </h4>
+          <p>
+            When upgrading the Nginx binary package itself, send signal <code>USR2</code> to the master process. Nginx re-executes the new binary in-place, creating a secondary master process that shares the listening sockets. Once verified, send <code>WINCH</code> to gracefully terminate the old workers.
+          </p>
+        </div>
+
+        <h2>2. Preventing Disk Exhaustion via logrotate and journald</h2>
+        <p>
+          Web server access logs generate continuous disk writes. Without proper rotation, an active web server will eventually fill its disk volume, causing databases and operating system services to fail unpredictably.
+        </p>
+        <p>
+          Create a strict logrotate configuration under <code>/etc/logrotate.d/nginx</code>:
+        </p>
+
+        <pre><code>/var/log/nginx/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 www-data adm
+    sharedscripts
+    postrotate
+        [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+    endscript
+}</code></pre>
+
+        <p>
+          The <code>USR1</code> signal instructs Nginx workers to re-open log files cleanly without restarting the processes.
+        </p>
+        <p>
+          Additionally, prevent the systemd journal from unbounded growth by capping its size in <code>/etc/systemd/journald.conf</code>:
+        </p>
+        <pre><code>[Journal]
+SystemMaxUse=500M
+SystemMaxFileSize=100M
+MaxRetentionSec=1month</code></pre>
+
+        <h2>3. Automated Certificate Renewals (ACME)</h2>
+        <p>
+          Manual certificate renewals are an operational hazard. Automated ACME renewals using <code>certbot</code> or lightweight clients should always be coupled with validation testing.
+        </p>
+        <p>
+          Configure renewal hooks to reload Nginx only after a certificate file has been renewed successfully:
+        </p>
+        <pre><code># /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+#!/usr/bin/env bash
+set -e
+nginx -t && systemctl reload nginx</code></pre>
+
+        <p>
+          Verify the systemd timer status regularly:
+        </p>
+        <pre><code>systemctl list-timers | grep certbot</code></pre>
+
+        <h2>4. Minimal Security Hardening Baseline</h2>
+        <p>
+          A production server requires defense-in-depth at the OS and network layer:
+        </p>
+        <ul>
+          <li><strong>Principle of Least Privilege:</strong> Web content in <code>/var/www/</code> should be owned by an unprivileged deployment user with permissions <code>755</code> for directories and <code>644</code> for files. The web server user (<code>www-data</code> or <code>nginx</code>) should only have read-only access.</li>
+          <li><strong>Minimal Firewall Policy:</strong> Allow only essential inbound ports (SSH on a secured port or key-only, HTTP 80, HTTPS 443) and drop all unsolicited traffic.</li>
+          <li><strong>Automated Security Updates:</strong> Enable <code>unattended-upgrades</code> for critical kernel and base library security patches.</li>
+        </ul>
+
+        <div class="article-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Security Area</th>
+                <th>Standard Configuration</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>SSH Access</strong></td>
+                <td><code>PasswordAuthentication no</code>, Ed25519 keys only</td>
+                <td>Eliminates automated brute-force password attempts</td>
+              </tr>
+              <tr>
+                <td><strong>Webroot Ownership</strong></td>
+                <td>Read-only for <code>www-data</code>, owned by deployment user</td>
+                <td>Prevents web application bugs from writing malicious files</td>
+              </tr>
+              <tr>
+                <td><strong>System Patches</strong></td>
+                <td><code>unattended-upgrades</code> active</td>
+                <td>Patches critical CVEs automatically without administrative latency</td>
+              </tr>
+              <tr>
+                <td><strong>Sysctl Hardening</strong></td>
+                <td><code>fs.protected_hardlinks=1</code>, <code>fs.protected_symlinks=1</code></td>
+                <td>Mitigates local privilege escalation via filesystem links</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Maintenance Checklist</h2>
+        <ol>
+          <li>Always test configuration syntax with <code>nginx -t</code> before triggering <code>systemctl reload</code>.</li>
+          <li>Ensure <code>logrotate</code> signals Nginx with <code>USR1</code> and verify compressed archives rotate daily.</li>
+          <li>Check remaining disk space and inodes (<code>df -h</code> and <code>df -i</code>) during monthly reviews.</li>
+          <li>Test certificate renewal dry-run: <code>certbot renew --dry-run</code>.</li>
+        </ol>
+      </article>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>

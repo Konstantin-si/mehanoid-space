@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimizing Modern Web Delivery: HTTP/2 Multiplexing, TLS 1.3, and Edge Caching — Mehanoid Space</title>
+  <meta name="description" content="Technical analysis of modern web latency: zero-RTT TLS 1.3, HTTP/2 stream multiplexing, Brotli compression, and deterministic caching headers.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#articles">Articles</a>
+        <a href="/about.html">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <a href="/#articles" class="back-link">&larr; Back to all articles</a>
+
+      <div class="article-header">
+        <div class="article-topic">Web Performance</div>
+        <h1 class="hero-title" style="font-size: 2.2rem; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          Optimizing Modern Web Delivery: HTTP/2 Multiplexing, TLS 1.3, and Edge Caching
+        </h1>
+
+        <div class="article-meta">
+          <span>Published: November 2026</span>
+          <span>Category: Performance Engineering</span>
+          <span>Reading Time: 10 min</span>
+        </div>
+      </div>
+
+      <article class="article-body">
+        <p>
+          Web performance is dominated by the speed of light in fiber optics and the number of round-trip times (RTT) required before an HTTP response payload begins streaming. Even on gigabit fiber connections, a visitor experiencing 80 ms of network latency must wait through multiple round trips for DNS, TCP handshakes, TLS negotiation, and server compute time.
+        </p>
+        <p>
+          This article analyzes the network-level mechanics of modern HTTP delivery and outlines practical configuration patterns to achieve sub-100ms Time to First Byte (TTFB).
+        </p>
+
+        <h2>1. The TLS 1.3 Handshake Advantage</h2>
+        <p>
+          In legacy TLS 1.2, establishing an encrypted session required two round trips: one for cipher negotiation and key exchange, and a second for certificate validation and Finished messages.
+        </p>
+        <p>
+          TLS 1.3 mandates Diffie-Hellman ephemeral key exchanges directly inside the initial <code>ClientHello</code> and <code>ServerHello</code> packets. This reduces the handshake to a single round trip (1-RTT).
+        </p>
+
+        <div class="callout-box">
+          <h4>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            OCSP Stapling
+          </h4>
+          <p>
+            When OCSP stapling is disabled, the client browser pauses connection establishment to query the Certificate Authority's OCSP responder directly. Enabling <code>ssl_stapling on;</code> allows the server to attach a timestamped, signed OCSP response to its TLS handshake, eliminating CA lookup latency entirely.
+          </p>
+        </div>
+
+        <h2>2. HTTP/2 Stream Multiplexing and Head-of-Line Blocking</h2>
+        <p>
+          Under HTTP/1.1, browsers opened up to six parallel TCP connections per origin to bypass head-of-line blocking. Each connection consumed server memory, required separate handshakes, and competed for TCP congestion windows.
+        </p>
+        <p>
+          HTTP/2 breaks requests and responses into independent binary frames tagged with a <em>Stream ID</em>. Multiple requests travel concurrently over a single TCP socket.
+        </p>
+        <ul>
+          <li><strong>Zero Connection Overhead:</strong> Additional asset requests incur no TCP or TLS handshake overhead.</li>
+          <li><strong>Stream Prioritization:</strong> The browser can indicate that critical CSS and HTML frames should be delivered before non-critical images.</li>
+          <li><strong>HPACK Header Compression:</strong> Repetitive HTTP headers (such as <code>Cookie</code>, <code>User-Agent</code>, <code>Accept-Encoding</code>) are compressed via differential index tables.</li>
+        </ul>
+
+        <h2>3. Compression: Brotli vs. Gzip</h2>
+        <p>
+          Brotli provides 15% to 25% better compression density than Gzip for text assets (HTML, CSS, JavaScript, JSON) thanks to its pre-defined dictionary of common web idioms and longer sliding window size.
+        </p>
+        <p>
+          However, Brotli levels 10 and 11 are computationally intensive and should only be applied to static pre-compressed assets during build time. For dynamic on-the-fly compression, Brotli level 4 or 5 offers the optimal trade-off between CPU overhead and compression gain.
+        </p>
+
+        <pre><code># Nginx configuration for high-performance static delivery
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name mehanoid.space;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    # OCSP Stapling
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 1.1.1.1 8.8.8.8 valid=300s;
+    resolver_timeout 5s;
+
+    # TLS Session Cache
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    # Compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/xml+rss image/svg+xml;
+
+    # Static asset caching
+    location ~* \.(css|js|svg|woff2|ico|png|jpg)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform, immutable";
+        access_log off;
+    }
+
+    # HTML documents: immediate validation
+    location / {
+        add_header Cache-Control "public, max-age=0, must-revalidate";
+    }
+}</code></pre>
+
+        <h2>4. Deterministic Cache-Control Policies</h2>
+        <p>
+          The fastest network request is the one that never touches the network. A bulletproof caching strategy separates assets into two categories:
+        </p>
+        <div class="article-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Resource Type</th>
+                <th>Header Directive</th>
+                <th>Browser Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Hashed Assets</strong> (e.g., <code>bundle.a1b2c3.js</code>)</td>
+                <td><code>public, max-age=31536000, immutable</code></td>
+                <td>Stored in disk cache for 1 year; browser never checks for updates until URL changes.</td>
+              </tr>
+              <tr>
+                <td><strong>HTML Documents</strong></td>
+                <td><code>public, max-age=0, must-revalidate</code></td>
+                <td>Browser revalidates ETag/Last-Modified with server before rendering, ensuring fresh deployments.</td>
+              </tr>
+              <tr>
+                <td><strong>Private User API</strong></td>
+                <td><code>no-store, no-cache, private</code></td>
+                <td>Never written to intermediate caches or client disk.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>5. Diagnostic Profiling with curl</h2>
+        <p>
+          Instead of relying on browser DevTools which introduce extensions and local rendering delays, use <code>curl</code> to measure exact socket timing breakdowns:
+        </p>
+
+        <pre><code>curl -w "\n\
+DNS Lookup:        %{time_namelookup}s\n\
+TCP Connect:       %{time_connect}s\n\
+TLS Handshake:     %{time_appconnect}s\n\
+Pre-Transfer:      %{time_pretransfer}s\n\
+Time to First Byte:%{time_starttransfer}s\n\
+Total Duration:    %{time_total}s\n" \
+-o /dev/null -s https://mehanoid.space</code></pre>
+
+        <p>
+          By systematically addressing each stage—minimizing DNS latency, tuning TLS session resumption, enabling HTTP/2 multiplexing, and enforcing immutable caching—static web delivery achieves predictable, lightning-fast response times globally.
+        </p>
+      </article>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deterministic Backup Pipelines: Deduplication, Verification, and Disaster Recovery — Mehanoid Space</title>
+  <meta name="description" content="Engineering resilient, automated backup systems: content-defined deduplication, client-side encryption, integrity checks, and practical restore validation runbooks.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#articles">Articles</a>
+        <a href="/about.html">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <a href="/#articles" class="back-link">&larr; Back to all articles</a>
+
+      <div class="article-header">
+        <div class="article-topic">Storage &amp; Reliability</div>
+        <h1 class="hero-title" style="font-size: 2.2rem; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          Deterministic Backup Pipelines: Deduplication, Verification, and Disaster Recovery
+        </h1>
+
+        <div class="article-meta">
+          <span>Published: November 2026</span>
+          <span>Category: Disaster Recovery</span>
+          <span>Reading Time: 11 min</span>
+        </div>
+      </div>
+
+      <article class="article-body">
+        <p>
+          In systems administration, an unverified backup is merely a hypothesis. Until a snapshot has been retrieved from off-site storage, decrypted, mounted, and verified against functional application tests, there is zero guarantee that data can be recovered during an outage.
+        </p>
+        <p>
+          This guide outlines an end-to-end architecture for deterministic, secure backups. It covers content-defined deduplication, append-only security boundaries, and automated recovery drills.
+        </p>
+
+        <h2>1. The 3-2-1 Architecture for Standalone Servers</h2>
+        <p>
+          The classic 3-2-1 backup principle remains the gold standard, but modern cloud infrastructure requires specific adaptations:
+        </p>
+        <ul>
+          <li><strong>3 Copies of Data:</strong> The live production filesystem, a local fast-recovery snapshot on separate storage, and a remote repository.</li>
+          <li><strong>2 Different Media / Storage Formats:</strong> Local filesystem volume (e.g., ZFS snapshot or dedicated block volume) and remote content-addressable chunk storage (e.g., S3-compatible object storage or remote SFTP target).</li>
+          <li><strong>1 Offsite &amp; Immutable Copy:</strong> The off-site copy must be protected by append-only policies or object lock to prevent malicious deletion in the event of primary server compromise.</li>
+        </ul>
+
+        <h2>2. Content-Defined Chunking and Deduplication</h2>
+        <p>
+          Traditional tarball backups generate massive storage bloat and bandwidth costs. Modern backup engines (such as Restic and BorgBackup) employ <em>content-defined chunking</em> (using Rabin fingerprints or FastCDC algorithms).
+        </p>
+        <p>
+          Instead of fixed-size blocks, the data stream is split into variable chunks based on sliding window hash boundaries. If a 10 GB database file has 50 MB of changes inserted in the middle, fixed-block chunking invalidates all subsequent blocks. Content-defined chunking shifts the boundary and retains deduplication across all untouched portions.
+        </p>
+
+        <div class="callout-box tip">
+          <h4>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Cryptographic Safety
+          </h4>
+          <p>Chunks are hashed (BLAKE2b or SHA-256) and authenticated using AES-256-GCM or ChaCha20-Poly1305. The storage backend sees only encrypted, content-addressable blobs and cannot deduce filenames, directory structures, or file content.</p>
+        </div>
+
+        <h2>3. Production Backup Runbook: Automated Database and Asset Snapshots</h2>
+        <p>
+          A backup pipeline must take consistent point-in-time snapshots without locking production databases.
+        </p>
+        <p>
+          Below is a production-grade Bash script utilizing <code>restic</code>, targeting a remote S3 repository with credentials isolated from interactive shell history:
+        </p>
+
+        <pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+export RESTIC_REPOSITORY="s3:https://s3.eu-central-1.storage-provider.com/mehanoid-backups"
+export RESTIC_PASSWORD_FILE="/etc/restic/password"
+export AWS_SHARED_CREDENTIALS_FILE="/etc/restic/credentials"
+
+BACKUP_TAG="prod-host-daily"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+TEMP_DUMP_DIR="/var/backups/staging"
+
+mkdir -p "${TEMP_DUMP_DIR}"
+chmod 700 "${TEMP_DUMP_DIR}"
+
+echo "[+] Starting database snapshot..."
+# Stream database dump directly without holding table locks
+pg_dump -U postgres -h 127.0.0.1 -Fc production_db > "${TEMP_DUMP_DIR}/db_${TIMESTAMP}.dump"
+
+echo "[+] Uploading deduplicated snapshot to remote storage..."
+restic backup \
+  --tag "${BACKUP_TAG}" \
+  --exclude="/var/log" \
+  --exclude="/var/cache" \
+  --exclude="/tmp" \
+  "${TEMP_DUMP_DIR}" \
+  /etc \
+  /var/www
+
+echo "[+] Cleaning temporary dump..."
+rm -f "${TEMP_DUMP_DIR}/db_${TIMESTAMP}.dump"
+
+echo "[+] Enforcing retention policy..."
+restic forget \
+  --tag "${BACKUP_TAG}" \
+  --keep-daily 7 \
+  --keep-weekly 4 \
+  --keep-monthly 12 \
+  --prune
+
+echo "[+] Backup run completed successfully."</code></pre>
+
+        <h2>4. Orchestration via systemd Timer</h2>
+        <p>
+          Rather than relying on legacy cron, use a systemd timer for improved logging, monitoring, and failure isolation:
+        </p>
+
+        <pre><code># /etc/systemd/system/backup-daily.service
+[Unit]
+Description=Daily Encrypted System Backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/backup-run.sh
+Nice=19
+IOSchedulingClass=idle
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_NET_BIND_SERVICE
+ProtectSystem=strict
+ReadWritePaths=/var/backups/staging /root/.cache/restic
+
+# /etc/systemd/system/backup-daily.timer
+[Unit]
+Description=Trigger Daily Backup at 03:00 UTC
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target</code></pre>
+
+        <h2>5. Automated Integrity Checks and Restore Drills</h2>
+        <p>
+          Bit rot and silent storage degradation occur over time. A robust backup routine schedules a two-tier verification workflow:
+        </p>
+        <ol>
+          <li>
+            <strong>Weekly Index Verification:</strong> Ensures all pack files listed in the index exist and have correct SHA-256 signatures:
+            <pre><code>restic check</code></pre>
+          </li>
+          <li>
+            <strong>Monthly Random Subset Data Audit:</strong> Reads and cryptographically decrypts a percentage of real data blobs from remote storage:
+            <pre><code>restic check --read-data-subset=10%</code></pre>
+          </li>
+          <li>
+            <strong>Quarterly Restore Drill:</strong> Automatically provisions an isolated sandbox container, restores the latest backup, boots PostgreSQL, and verifies table checksums.
+          </li>
+        </ol>
+
+        <h2>Recovery Metrics: RTO and RPO</h2>
+        <div class="article-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Definition</th>
+                <th>Target for Standalone Production</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>RPO (Recovery Point Objective)</strong></td>
+                <td>Maximum acceptable age of data loss upon recovery</td>
+                <td>&le; 24 hours for daily runs; &le; 1 hour with incremental WAL shipping</td>
+              </tr>
+              <tr>
+                <td><strong>RTO (Recovery Time Objective)</strong></td>
+                <td>Duration required to restore services to operational status</td>
+                <td>&le; 45 minutes from cold server to full HTTP response</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          By automating both snapshot generation and verification drills, teams transform disaster recovery from a stressful emergency into an ordinary, rehearsed operational task.
+        </p>
+      </article>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>

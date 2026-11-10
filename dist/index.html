@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mehanoid Space — Systems Engineering &amp; Web Infrastructure Journal</title>
+  <meta name="description" content="Independent engineering journal covering Linux systems administration, storage reliability, backup verification, web performance optimization, and operational server maintenance.">
+  <meta name="author" content="Mehanoid Space">
+  <meta property="og:title" content="Mehanoid Space — Systems Engineering &amp; Web Infrastructure Journal">
+  <meta property="og:description" content="Technical notes, runbooks, and in-depth articles on Linux internals, backup architectures, web protocols, and server reliability.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mehanoid.space">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="#articles">Articles</a>
+        <a href="#topics">Topics</a>
+        <a href="/about.html">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section class="hero">
+        <div class="badge">
+          <span class="pulse"></span>
+          <span>TECHNICAL JOURNAL &bull; SYSTEMS &amp; INFRASTRUCTURE</span>
+        </div>
+        <h1 class="hero-title">Practical systems engineering, Linux internals, and web infrastructure.</h1>
+        <p class="hero-subtitle">
+          Mehanoid Space is an independent engineering publication providing verified runbooks, architectural analyses, and operational guides for Linux system administration, deterministic backup pipelines, web delivery optimization, and server reliability.
+        </p>
+        <div class="hero-cta">
+          <a href="#articles" class="btn btn-primary">
+            <span>Browse Articles</span>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+          <a href="/about.html" class="btn btn-secondary">
+            <span>About the Publication</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- Terminal Status Snippet -->
+      <div class="terminal-box">
+        <div class="terminal-header">
+          <span class="terminal-dot dot-red"></span>
+          <span class="terminal-dot dot-yellow"></span>
+          <span class="terminal-dot dot-green"></span>
+        </div>
+        <pre><span class="cmd">operator@mehanoid-space:~$</span> sysctl net.core.default_qdisc net.ipv4.tcp_congestion_control
+<span class="res">net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr</span>
+<span class="cmd">operator@mehanoid-space:~$</span> curl -sI https://mehanoid.space | grep -iE 'HTTP/|server|cache-control'
+<span class="res">HTTP/2 200 OK
+server: nginx
+cache-control: public, max-age=0, must-revalidate</span></pre>
+      </div>
+
+      <!-- Core Editorial Areas -->
+      <section id="topics">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span>Core Editorial Scope</span>
+          </h2>
+        </div>
+        <div class="grid-cards">
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <h3>Linux Systems &amp; Kernels</h3>
+            <p>Unified cgroups v2 resource controllers, systemd slices, process isolation, memory limits, and Pressure Stall Information (PSI).</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16m-8 4v6m-3-3l3 3 3-3"/></svg>
+            </div>
+            <h3>Storage &amp; Disaster Recovery</h3>
+            <p>Deterministic backup pipelines, content-defined deduplication, encrypted chunk repositories, and automated recovery drills.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3>Web Protocols &amp; Performance</h3>
+            <p>HTTP/2 stream multiplexing, TLS 1.3 session resumption, Brotli compression, edge caching headers, and latency profiling.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h3>Operational Reliability</h3>
+            <p>Zero-downtime web server reloads, logrotate disk exhaustion defense, automated ACME renewals, and security baselines.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Technical Articles -->
+      <section id="articles">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span>Published Technical Articles</span>
+          </h2>
+        </div>
+
+        <div class="articles-list">
+          <a href="/articles/linux-process-isolation-and-cgroups.html" class="article-row">
+            <div class="article-row-content">
+              <div class="article-meta-inline">
+                <span class="article-topic">Linux</span>
+              </div>
+              <div class="article-title">Process Isolation and Resource Management with systemd and cgroups v2</div>
+              <div class="article-desc">Configuring unified memory thresholds, CPU fair-shares, block I/O bandwidth, and Pressure Stall Information (PSI) monitoring.</div>
+            </div>
+            <div class="article-date">
+              Nov 2026
+              <span class="article-read-time">9 min read</span>
+            </div>
+          </a>
+
+          <a href="/articles/backup-verification-and-disaster-recovery.html" class="article-row">
+            <div class="article-row-content">
+              <div class="article-meta-inline">
+                <span class="article-topic">Storage</span>
+              </div>
+              <div class="article-title">Deterministic Backup Pipelines: Deduplication, Verification, and Disaster Recovery</div>
+              <div class="article-desc">Automated, encrypted backup architectures using content-defined chunking, offsite replication, and routine restoration drills.</div>
+            </div>
+            <div class="article-date">
+              Nov 2026
+              <span class="article-read-time">11 min read</span>
+            </div>
+          </a>
+
+          <a href="/articles/web-performance-and-http-optimization.html" class="article-row">
+            <div class="article-row-content">
+              <div class="article-meta-inline">
+                <span class="article-topic">Web Delivery</span>
+              </div>
+              <div class="article-title">Optimizing Modern Web Delivery: HTTP/2 Multiplexing, TLS 1.3, and Edge Caching</div>
+              <div class="article-desc">Detailed configuration guide for TLS session resumption, Brotli compression, deterministic cache headers, and socket latency measurement.</div>
+            </div>
+            <div class="article-date">
+              Nov 2026
+              <span class="article-read-time">10 min read</span>
+            </div>
+          </a>
+
+          <a href="/articles/practical-web-server-maintenance.html" class="article-row">
+            <div class="article-row-content">
+              <div class="article-meta-inline">
+                <span class="article-topic">Operations</span>
+              </div>
+              <div class="article-title">Production Web Server Maintenance: Zero-Downtime Reloads, Log Rotation, and Security Baselines</div>
+              <div class="article-desc">Practical runbook for zero-downtime Nginx reloads, disk exhaustion mitigation via logrotate, ACME renewals, and host security.</div>
+            </div>
+            <div class="article-date">
+              Nov 2026
+              <span class="article-read-time">10 min read</span>
+            </div>
+          </a>
+
+          <a href="/articles/packet-resilience-in-unreliable-networks.html" class="article-row">
+            <div class="article-row-content">
+              <div class="article-meta-inline">
+                <span class="article-topic">Networking</span>
+              </div>
+              <div class="article-title">Resilient Transport Architecture in Unreliable Networks: Congestion Control and Packet Loss Mitigation</div>
+              <div class="article-desc">Analyzing transport-layer resilience across lossy WAN links: TCP BBR vs. Cubic, bufferbloat mitigation, and PMTU blackhole recovery.</div>
+            </div>
+            <div class="article-date">
+              Nov 2026
+              <span class="article-read-time">8 min read</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section id="about">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>About the Publication</span>
+          </h2>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.5rem;">
+          Mehanoid Space publishes independent, reproducible technical guides and operational runbooks for server administrators and DevOps engineers. We emphasize foundational operating system tools, open networking protocols, and dependable production practices without synthetic marketing buzzwords.
+        </p>
+        <div>
+          <a href="/about.html" class="btn btn-secondary">
+            <span>Read Editorial Mission &rarr;</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="#articles">Articles</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>

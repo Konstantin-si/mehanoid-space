@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Process Isolation and Resource Management with systemd and cgroups v2 — Mehanoid Space</title>
+  <meta name="description" content="Technical guide to configuring memory limits, CPU quotas, I/O pressure controls, and process isolation in Linux using the unified cgroups v2 hierarchy and systemd slices.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#articles">Articles</a>
+        <a href="/about.html">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <a href="/#articles" class="back-link">&larr; Back to all articles</a>
+
+      <div class="article-header">
+        <div class="article-topic">Linux Systems Engineering</div>
+        <h1 class="hero-title" style="font-size: 2.2rem; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          Process Isolation and Resource Management with systemd and cgroups v2
+        </h1>
+
+        <div class="article-meta">
+          <span>Published: November 2026</span>
+          <span>Category: Linux Internals</span>
+          <span>Reading Time: 9 min</span>
+        </div>
+      </div>
+
+      <article class="article-body">
+        <p>
+          Running production workloads on shared Linux hosts requires deterministic resource bounds. Without strict isolation, an errant database query or a memory leak in a background worker can exhaust page caches, trigger the Linux Out-Of-Memory (OOM) killer indiscriminately, and degrade latency across co-located services.
+        </p>
+        <p>
+          With the migration from the legacy cgroups v1 multi-hierarchy model to the <strong>unified cgroups v2 hierarchy</strong>, Linux kernel developers solved the long-standing cross-controller synchronization issues. Combined with modern <code>systemd</code> resource controllers, administrators can enforce strict CPU, memory, and I/O budgets without container virtualization overhead.
+        </p>
+
+        <h2>1. The Unified Hierarchy Advantage</h2>
+        <p>
+          In cgroups v1, each resource controller (CPU, memory, blkio, pids) operated in its own independent filesystem hierarchy. A process could belong to one hierarchy for CPU scheduling and a completely different branch for memory tracking. This caused severe synchronization anomalies, particularly around writeback cache tracking: dirty memory pages could not be properly mapped back to the I/O cgroup responsible for originating them.
+        </p>
+        <p>
+          Cgroups v2 enforces a single, unified process tree. Every process in the system belongs to exactly one cgroup node, and resource controllers are enabled hierarchically from root to leaves via <code>cgroup.subtree_control</code>.
+        </p>
+        <div class="callout-box">
+          <h4>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Verifying Unified Hierarchy
+          </h4>
+          <p>You can verify whether your system uses the unified hierarchy by running:</p>
+          <code>findmnt -t cgroup2 /sys/fs/cgroup</code>
+          <p style="margin-top: 0.5rem;">If mounted at <code>/sys/fs/cgroup</code>, cgroups v2 is active globally.</p>
+        </div>
+
+        <h2>2. Memory Control: Throttling vs. Termination</h2>
+        <p>
+          Cgroups v2 introduced a vital distinction between hard termination thresholds and proactive memory reclamation:
+        </p>
+        <ul>
+          <li>
+            <strong><code>MemoryMax</code> (kernel: <code>memory.max</code>):</strong> The absolute ceiling. If a cgroup exceeds this limit and anonymous memory cannot be reclaimed to swap, the kernel invokes the OOM killer against processes inside that specific cgroup.
+          </li>
+          <li>
+            <strong><code>MemoryHigh</code> (kernel: <code>memory.high</code>):</strong> The throttling threshold. When exceeded, processes inside the cgroup are throttled and forced into synchronous direct memory reclamation, while co-located services on the server remain unaffected.
+          </li>
+          <li>
+            <strong><code>MemoryMin</code> (kernel: <code>memory.min</code>):</strong> A hard guarantee beneath which page cache and anonymous pages are never reclaimed by global memory pressure.
+          </li>
+        </ul>
+
+        <pre><code># /etc/systemd/system/app-backend.service.d/override.conf
+[Service]
+# Graceful throttling boundary at 1.8 GB
+MemoryHigh=1800M
+
+# Hard boundary at 2.0 GB (triggers cgroup-scoped OOM)
+MemoryMax=2G
+
+# Protect 256 MB of baseline runtime working set
+MemoryMin=256M
+
+# Restrict maximum concurrent thread count
+TasksMax=512</code></pre>
+
+        <h2>3. Fair CPU Allocation and Hard Caps</h2>
+        <p>
+          CPU management in cgroups v2 supports two distinct operational models: proportional weight distribution and strict period-based quotas.
+        </p>
+        <p>
+          <strong>Weight-based sharing (<code>CPUWeight</code>):</strong> Values range from 1 to 10,000 (default: 100). When CPU contention occurs, cycles are distributed proportionally according to weights. If other cores are idle, a service with <code>CPUWeight=50</code> can still utilize 100% of available CPU.
+        </p>
+        <p>
+          <strong>Hard Bandwidth Caps (<code>CPUQuota</code>):</strong> Defines the absolute percentage of CPU time allowed per scheduling period. For example, <code>CPUQuota=150%</code> allows up to 1.5 CPU cores of execution time regardless of server load.
+        </p>
+
+        <div class="article-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Directive</th>
+                <th>cgroups v2 Kernel File</th>
+                <th>Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CPUWeight=200</code></td>
+                <td><code>cpu.weight</code></td>
+                <td>Proportional fair-share when host is under load</td>
+              </tr>
+              <tr>
+                <td><code>CPUQuota=80%</code></td>
+                <td><code>cpu.max</code></td>
+                <td>Hard ceiling; throttles execution when budget is depleted</td>
+              </tr>
+              <tr>
+                <td><code>IOWeight=50</code></td>
+                <td><code>io.weight</code></td>
+                <td>Proportional block I/O bandwidth allocation</td>
+              </tr>
+              <tr>
+                <td><code>IOReadBandwidthMax=/var 10M</code></td>
+                <td><code>io.max</code></td>
+                <td>Enforces maximum disk read throughput</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>4. Structuring systemd Slices</h2>
+        <p>
+          Rather than configuring limits per individual unit, production servers benefit from dividing workloads into hierarchical <em>slices</em>:
+        </p>
+        <ul>
+          <li><code>system.slice</code>: System daemons, monitoring, and SSH access.</li>
+          <li><code>production.slice</code>: Primary customer-facing web and API services.</li>
+          <li><code>background.slice</code>: Batch processors, log shipping, and automated maintenance jobs.</li>
+        </ul>
+
+        <pre><code># /etc/systemd/system/background.slice
+[Unit]
+Description=Background Batch and Maintenance Slice
+Before=slices.target
+
+[Slice]
+CPUWeight=20
+CPUQuota=100%
+MemoryHigh=1G
+MemoryMax=1200M
+IOWeight=20</code></pre>
+
+        <p>
+          Services can be attached to this slice simply by adding <code>Slice=background.slice</code> inside their unit definitions.
+        </p>
+
+        <h2>5. Monitoring via Pressure Stall Information (PSI)</h2>
+        <p>
+          Traditional CPU load averages conflate CPU wait with uninterruptible disk sleep and provide no insight into memory stalls. Linux PSI introduces precise stall metrics directly exposed under <code>/proc/pressure/</code>:
+        </p>
+        <pre><code># Inspect memory pressure
+cat /proc/pressure/memory
+# Output:
+# some avg10=0.00 avg60=0.00 avg300=0.00 total=312415
+# full avg10=0.00 avg60=0.00 avg300=0.00 total=184912</code></pre>
+
+        <p>
+          The <code>some</code> metric indicates the percentage of wall-clock time that at least one task was stalled waiting for memory. The <code>full</code> metric indicates that all non-idle tasks were stalled simultaneously (thrashing).
+        </p>
+        <p>
+          Real-time per-cgroup monitoring can be inspected interactively with:
+        </p>
+        <pre><code>systemd-cgtop -m -p</code></pre>
+
+        <h2>Summary Checklist</h2>
+        <ul>
+          <li>Ensure boot parameters do not force cgroups v1 (modern distributions default to unified v2).</li>
+          <li>Define <code>MemoryHigh</code> alongside <code>MemoryMax</code> to enable proactive reclaim before OOM termination.</li>
+          <li>Group unprivileged batch processing into a dedicated systemd slice with reduced <code>IOWeight</code> and <code>CPUWeight</code>.</li>
+          <li>Monitor PSI metrics in your telemetry pipeline to catch memory contention before latency spikes occur.</li>
+        </ul>
+      </article>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>

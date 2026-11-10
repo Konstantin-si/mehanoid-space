@@ -28,13 +28,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Smooth scroll
+  // Smooth scroll for hash links on the same page
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth' });
+      const href = this.getAttribute('href');
+      if (href && href.length > 1) {
+        try {
+          const target = document.querySelector(href);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        } catch (err) {
+          // Ignore invalid selector
+        }
       }
     });
   });

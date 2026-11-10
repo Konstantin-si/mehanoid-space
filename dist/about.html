@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — Mehanoid Space</title>
+  <meta name="description" content="Editorial principles and scope of Mehanoid Space: an independent technical journal covering Linux systems administration, storage reliability, and web performance.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#articles">Articles</a>
+        <a href="/about.html" class="active">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="article-header">
+        <div class="badge">
+          <span>INDEPENDENT TECHNICAL JOURNAL</span>
+        </div>
+        <h1 class="hero-title" style="font-size: 2.3rem; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          About Mehanoid Space
+        </h1>
+        <p class="hero-subtitle">
+          An engineering journal dedicated to reproducible systems administration, Linux internals, storage reliability, and web delivery optimization.
+        </p>
+      </div>
+
+      <article class="article-body">
+        <h2>Mission and Purpose</h2>
+        <p>
+          Mehanoid Space was established as a focused technical publication for systems engineers, site reliability operators, and DevOps practitioners. The journal publishes practical runbooks, architectural analyses, and operational post-mortems focused on maintaining reliable production systems.
+        </p>
+        <p>
+          Modern software infrastructure often suffers from unnecessary complexity and marketing abstractions. Mehanoid Space emphasizes simplicity, verifiable configurations, and deep understanding of operating system primitives.
+        </p>
+
+        <h2>Editorial Scope</h2>
+        <p>
+          Our publications concentrate on four core technical domains:
+        </p>
+
+        <div class="grid-cards" style="margin: 2rem 0;">
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <h3>Linux Systems &amp; Kernels</h3>
+            <p>Unified cgroups v2 resource controllers, systemd unit orchestration, process isolation, and sysctl performance tuning.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16m-8 4v6m-3-3l3 3 3-3"/></svg>
+            </div>
+            <h3>Storage &amp; Disaster Recovery</h3>
+            <p>Deterministic backup verification, content-defined deduplication, append-only repositories, and restore drill automation.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3>Web Protocols &amp; Performance</h3>
+            <p>HTTP/2 and HTTP/3 multiplexing, TLS 1.3 handshake efficiency, compression benchmarks, and edge cache headers.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon">
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h3>Operational Reliability</h3>
+            <p>Zero-downtime server reloads, disk exhaustion mitigation via log rotation, ACME automation, and baseline host security.</p>
+          </div>
+        </div>
+
+        <h2>Publishing Principles</h2>
+        <ul>
+          <li><strong>Reproducibility:</strong> Every configuration snippet, command, and metric is verified against standard Debian, Ubuntu, or Alpine Linux distributions before publication.</li>
+          <li><strong>Zero Synthetic Hype:</strong> We do not publish commercial sponsored rankings, fabricated benchmarks, or buzzword-driven architectures.</li>
+          <li><strong>Longevity over Trends:</strong> Articles focus on fundamental networking primitives and stable operating system interfaces that remain relevant over years of production deployment.</li>
+          <li><strong>Lightweight Delivery:</strong> The site itself is built without external trackers, client-side frameworks, or third-party fonts, delivering maximum speed and respect for reader resources.</li>
+        </ul>
+
+        <h2>Reading and Reference</h2>
+        <p>
+          All published technical materials are freely accessible and organized in the article directory. Configurations provided in the articles are released under standard open documentation practices for production use.
+        </p>
+        <div style="margin-top: 2rem;">
+          <a href="/#articles" class="btn btn-primary">
+            <span>Browse Technical Articles</span>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+      </article>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>

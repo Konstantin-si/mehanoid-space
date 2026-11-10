@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resilient Transport Architecture in Unreliable Networks: Congestion Control and Packet Loss Mitigation — Mehanoid Space</title>
+  <meta name="description" content="Technical analysis of transport layer resilience over high-latency, lossy WAN links: TCP BBR vs. Cubic, bufferbloat mitigation, Path MTU discovery, and socket buffer tuning.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="/" class="brand">
+        <img src="/assets/favicon.svg" alt="Mehanoid Space Logo">
+        <span>Mehanoid<span class="domain">.space</span></span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/#articles">Articles</a>
+        <a href="/about.html">About</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme"></button>
+      </nav>
+    </header>
+
+    <main>
+      <a href="/#articles" class="back-link">&larr; Back to all articles</a>
+
+      <div class="article-header">
+        <div class="article-topic">Network Engineering</div>
+        <h1 class="hero-title" style="font-size: 2.2rem; margin-top: 0.5rem; margin-bottom: 0.75rem;">
+          Resilient Transport Architecture in Unreliable Networks: Congestion Control and Packet Loss Mitigation
+        </h1>
+
+        <div class="article-meta">
+          <span>Published: November 2026</span>
+          <span>Category: Transport Protocols</span>
+          <span>Reading Time: 8 min</span>
+        </div>
+      </div>
+
+      <article class="article-body">
+        <p>
+          Wide-area data transfer frequently encounters network links characterized by high propagation delay, transient packet reordering, and non-congestion packet loss (such as wireless radio interference or carrier route flaps). Under these conditions, conventional transport algorithms experience severe throughput collapse.
+        </p>
+        <p>
+          This paper analyzes the mechanics of transport-layer resilience in modern Linux networking, examining model-based congestion control (BBR), fair queueing packet schedulers, and Path MTU blackhole mitigation.
+        </p>
+
+        <h2>1. The Loss-Based Congestion Control Dilemma</h2>
+        <p>
+          Legacy congestion control algorithms (such as TCP Reno and Cubic) treat packet loss as a primary indicator of network congestion. When a single packet drops, Cubic slashes its congestion window (<code>cwnd</code>) by 30% to 50% and enters slow multiplicative recovery.
+        </p>
+        <p>
+          On a transatlantic or transcontinental link with 120 ms RTT, even a modest 1.5% random packet loss can reduce a gigabit pipe to less than 15 Mbps under Cubic. The algorithm mistakenly attributes wireless or hardware drops to queue exhaustion.
+        </p>
+
+        <h2>2. BBR: Bottleneck Bandwidth and Round-Trip Time</h2>
+        <p>
+          Google's BBR (Bottleneck Bandwidth and RTT) algorithm fundamentally reimagines congestion control. Instead of reacting to packet loss, BBR builds an explicit physical model of the network path by continuously measuring two independent parameters:
+        </p>
+        <ul>
+          <li><strong>Maximum Delivery Rate (Bottleneck Bandwidth):</strong> Tracked over a rolling window of round trips.</li>
+          <li><strong>Minimum Round-Trip Time (RTprop):</strong> Observed during periods of minimal queue occupancy.</li>
+        </ul>
+        <p>
+          By pacing transmission at the exact calculated bottleneck bandwidth, BBR prevents the formation of queues at intermediate hops. When packet loss occurs without an increase in RTT, BBR maintains transmission speed rather than collapsing its window.
+        </p>
+
+        <div class="callout-box">
+          <h4>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Enabling BBR and Fair Queueing in Linux
+          </h4>
+          <p>BBR requires the <code>fq</code> (Fair Queueing) packet scheduler to enable precise kernel packet pacing. Configure via <code>/etc/sysctl.d/99-network-bbr.conf</code>:</p>
+          <pre><code>net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr</code></pre>
+        </div>
+
+        <h2>3. Mitigating Bufferbloat with Active Queue Management</h2>
+        <p>
+          Bufferbloat occurs when edge routers and switches deploy excessively large FIFO (First-In, First-Out) packet buffers. When congestion occurs, buffers fill up, introducing hundreds of milliseconds of latency without dropping packets.
+        </p>
+        <p>
+          Combining BBR with <code>fq</code> or deploying <code>cake</code> / <code>fq_codel</code> schedules packets into stochastic flow buckets and drops packets from head rather than tail. This provides immediate, low-latency signaling back to sender endpoints.
+        </p>
+
+        <h2>4. Path MTU Discovery (PMTUD) and MSS Clamping</h2>
+        <p>
+          When IP packets exceed the Maximum Transmission Unit (MTU) of an intermediate link and have the Don't Fragment (DF) bit set, the intermediate router drops the packet and responds with an ICMP Type 3, Code 4 (<em>Fragmentation Needed and DF set</em>) packet.
+        </p>
+        <p>
+          If middlebox firewalls filter these ICMP responses, a <strong>PMTUD blackhole</strong> is created: small handshakes succeed, but large application data frames stall and time out indefinitely.
+        </p>
+        <p>
+          To diagnose and resolve PMTUD blackholes on Linux edge hosts:
+        </p>
+        <pre><code># Test exact MTU boundary without fragmentation
+ping -M do -s 1472 1.1.1.1
+
+# Enable Linux MTU probing fallback
+sysctl -w net.ipv4.tcp_mtu_probing=1
+
+# Clamp TCP MSS at router/firewall edge (nftables example)
+nft add rule inet filter forward tcp flags syn tcp option max-seg-size set rt mtu</code></pre>
+
+        <h2>5. Sizing Socket Buffers for High Bandwidth-Delay Product (BDP)</h2>
+        <p>
+          The Bandwidth-Delay Product defines the volume of unacknowledged data in transit required to fully saturate a link:
+        </p>
+        <p style="font-family: var(--font-mono); background: var(--bg-card); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          BDP = Bandwidth (bytes/sec) &times; Round-Trip Time (sec)
+        </p>
+        <p>
+          For a 1 Gbps link with 100 ms RTT, the BDP is 12.5 MB. If the operating system limits maximum socket receive buffers to 4 MB, throughput is capped at 320 Mbps regardless of link quality.
+        </p>
+
+        <div class="article-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Kernel Setting</th>
+                <th>Recommended Value (High-Throughput WAN)</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>net.ipv4.tcp_rmem</code></td>
+                <td><code>4096 87380 16777216</code></td>
+                <td>Receive buffer: min, default, max (16 MB ceiling)</td>
+              </tr>
+              <tr>
+                <td><code>net.ipv4.tcp_wmem</code></td>
+                <td><code>4096 65536 16777216</code></td>
+                <td>Send buffer: min, default, max (16 MB ceiling)</td>
+              </tr>
+              <tr>
+                <td><code>net.core.rmem_max</code></td>
+                <td><code>16777216</code></td>
+                <td>Global socket receive buffer limit</td>
+              </tr>
+              <tr>
+                <td><code>net.core.wmem_max</code></td>
+                <td><code>16777216</code></td>
+                <td>Global socket send buffer limit</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Summary</h2>
+        <p>
+          By pairing BBR pacing with Fair Queueing packet scheduling, active PMTUD probing, and appropriately scaled socket buffers, server infrastructure maintains optimal throughput and bounded latency across challenging wide-area networks.
+        </p>
+      </article>
+    </main>
+
+    <footer>
+      <div>&copy; 2026 Mehanoid Space. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/robots.txt">robots.txt</a>
+        <a href="/sitemap.xml">sitemap.xml</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/assets/main.js"></script>
+</body>
+</html>
